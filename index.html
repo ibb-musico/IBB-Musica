@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827"><title>IBB Música | Iglesia Bíblica Bautista El Bosque</title>
+<style>
+:root{--navy:#14243a;--red:#b91c1c;--paper:#f5f6f8;--ink:#182230;--muted:#687385;--line:#dce1e8;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}header{background:var(--navy);color:white;padding:22px max(18px,calc((100% - 1100px)/2));border-bottom:5px solid var(--red)}header h1{margin:0;font-size:1.8rem;letter-spacing:.04em}header p{margin:3px 0 0;color:#d5deea}.wrap{max-width:1100px;margin:0 auto;padding:18px}.toolbar,.panel,.song-card,.reader{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}.toolbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}label{display:block;font-size:.85rem;font-weight:700;margin-bottom:4px}input,select,textarea,button{font:inherit;border-radius:9px;border:1px solid #cbd3df;padding:10px;width:100%;background:white;color:var(--ink)}textarea{min-height:190px;resize:vertical}button{cursor:pointer;font-weight:700;background:var(--navy);color:white;border-color:var(--navy)}button.secondary{background:white;color:var(--navy)}button.danger{background:#fff1f1;color:#a01818;border-color:#f2bcbc}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.actions button{width:auto}.song-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.song-card{margin:0;cursor:pointer}.song-card h3{margin:0 0 4px}.meta{font-size:.88rem;color:var(--muted)}.hidden{display:none!important}.reader-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.reader h2{margin:0}.song-text{white-space:pre-wrap;font-size:1.12rem;line-height:2.1;overflow-wrap:anywhere}.chord{color:var(--red);font-weight:800;display:inline-block;margin:0 .08em}.song-text.large{font-size:1.5rem;line-height:2.25}.note{font-size:.9rem;color:var(--muted)}.pill{display:inline-block;background:#edf1f6;border-radius:99px;padding:3px 9px;font-size:.8rem;margin:2px}.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed #c4ccd7;border-radius:12px}.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}footer{text-align:center;color:var(--muted);font-size:.85rem;padding:20px}@media print{header,.toolbar,.actions,.no-print,footer{display:none!important}body{background:white}.wrap{max-width:none;padding:0}.reader{border:0}.song-text{font-size:16pt}}
+</style></head>
+<body>
+<header><h1>IBB MÚSICA</h1><p>Iglesia Bíblica Bautista El Bosque · Letras, acordes y servicio</p></header>
+<main class="wrap">
+<section class="toolbar no-print">
+<div><label for="search">Buscar alabanza</label><input id="search" placeholder="Nombre o letra…"></div>
+<div><label for="category">Categoría</label><select id="category"><option value="">Todas las categorías</option><option>Himnos</option><option>Lentas</option><option>Rápidas</option><option>Ofrenda</option><option>Saludos</option><option>Medley</option></select></div>
+<div><label for="instrument">Vista de instrumento</label><select id="instrument"><option value="todos">Todos</option><option value="voz">Voz</option><option value="piano">Piano / teclado</option><option value="guitarra">Guitarra</option><option value="bajo">Bajo</option><option value="bateria">Batería</option></select></div>
+<div><button id="newSong">＋ Añadir alabanza</button></div>
+</section>
+<section id="editor" class="panel hidden no-print">
+<div class="topline"><h2 id="editorTitle">Nueva alabanza</h2><button class="secondary" id="closeEditor">Cerrar</button></div>
+<form id="songForm">
+<input type="hidden" id="songId">
+<div class="toolbar" style="padding:0;border:0">
+<div><label for="title">Nombre de la alabanza *</label><input id="title" required placeholder="Título"></div>
+<div><label for="songCategory">Categoría</label><select id="songCategory"><option>Himnos</option><option>Lentas</option><option>Rápidas</option><option>Ofrenda</option><option>Saludos</option><option>Medley</option></select></div>
+<div><label for="key">Tonalidad</label><select id="key"></select></div>
+<div><label for="bpm">Tempo (opcional)</label><input id="bpm" type="number" min="30" max="300" placeholder="Ej. 90"></div>
+</div>
+<label for="lyrics">Letra y acordes</label>
+<textarea id="lyrics" placeholder="Escribe la letra completa. Coloca cada acorde justo donde cambia usando [G], [D], [Em], [C].&#10;Ejemplo: [G]Cristo es mi [D]vida, mi [Em]fuerza y mi [C]canción.&#10;&#10;Puedes separar estrofas, coro e interludios con líneas en blanco." required></textarea>
+<p class="note">Formato de acordes: escribe el acorde entre corchetes en el punto exacto del cambio, por ejemplo [G], [Am], [F#m]. La página permite transportar los acordes a otra tonalidad.</p>
+<label>Instrumentos para los que aplica</label>
+<div class="actions"><label><input type="checkbox" class="instCheck" value="voz" checked style="width:auto"> Voz</label><label><input type="checkbox" class="instCheck" value="piano" checked style="width:auto"> Piano</label><label><input type="checkbox" class="instCheck" value="guitarra" checked style="width:auto"> Guitarra</label><label><input type="checkbox" class="instCheck" value="bajo" checked style="width:auto"> Bajo</label><label><input type="checkbox" class="instCheck" value="bateria" checked style="width:auto"> Batería</label></div>
+<div class="actions"><button type="submit">Guardar alabanza</button><button type="button" class="secondary" id="cancelEdit">Cancelar</button></div>
+</form></section>
+<section id="reader" class="reader hidden">
+<div class="reader-top"><div><div id="readCategory" class="meta"></div><h2 id="readTitle"></h2><div id="readMeta" class="meta"></div></div><div class="actions no-print"><button class="secondary" id="transposeDown">− Tono</button><button class="secondary" id="transposeUp">＋ Tono</button><button class="secondary" id="fontToggle">Aumentar letra</button><button class="secondary" id="print">Imprimir</button><button class="secondary" id="editCurrent">Editar</button><button class="danger" id="deleteCurrent">Eliminar</button><button id="closeReader">Volver</button></div></div>
+<p class="note no-print">Los acordes se muestran en rojo sobre el punto de cambio. El cambio de tonalidad modifica los acordes guardados en formato [acorde].</p>
+<div id="readLyrics" class="song-text"></div>
+</section>
+<section class="topline"><h2>Repertorio</h2><span id="songCount" class="meta">0 alabanzas</span></section>
+<div id="songList" class="song-list"></div>
+<section class="panel" style="margin-top:16px"><h3>Cómo usar IBB Música</h3><ol><li>Selecciona una alabanza para ver la letra y los acordes.</li><li>Usa “− Tono” y “+ Tono” para adaptar la tonalidad.</li><li>Para agregar una canción, pulsa “Añadir alabanza” y pega la letra completa con los acordes entre corchetes.</li><li>Los cambios se guardan en este navegador. Para compartir el repertorio con el equipo, usa Exportar respaldo y luego Importar respaldo en cada dispositivo.</li></ol><div class="actions no-print"><button class="secondary" id="exportData">Exportar respaldo</button><button class="secondary" id="importData">Importar respaldo</button><input type="file" id="importFile" accept="application/json" class="hidden"></div><p class="note">Importante: por ahora los datos se guardan localmente en cada dispositivo; no se sincronizan automáticamente entre músicos. No incluyas información privada.</p></section>
+</main><footer>IBB Música · Herramienta de apoyo para el ministerio de alabanza</footer>
+<script>
+const $=id=>document.getElementById(id);
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B','Fb':'E','E#':'F','B#':'C'};
+const KEYS=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+let songs=JSON.parse(localStorage.getItem('ibb-musica-songs')||'[]'),currentId=null,shift=0,large=false;
+$('key').innerHTML=KEYS.map(k=>'<option>'+k+'</option>').join('');
+function save(){localStorage.setItem('ibb-musica-songs',JSON.stringify(songs))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderList(){let q=$('search').value.toLowerCase(),cat=$('category').value,ins=$('instrument').value;let list=songs.filter(s=>(!cat||s.category===cat)&&(!ins||ins==='todos'||(s.instruments||[]).includes(ins))&&((s.title+' '+s.lyrics).toLowerCase().includes(q)));$('songCount').textContent=list.length+' alabanzas';$('songList').innerHTML=list.length?list.map(s=>'<article class="song-card" data-id="'+esc(s.id)+'"><h3>'+esc(s.title)+'</h3><div class="meta">'+esc(s.category)+' · Tonalidad '+esc(s.key||'C')+(s.bpm?' · '+esc(s.bpm)+' BPM':'')+'</div><div>'+((s.instruments||[]).map(i=>'<span class="pill">'+({voz:'Voz',piano:'Piano',guitarra:'Guitarra',bajo:'Bajo',bateria:'Batería'}[i]||i)+'</span>').join(''))+'</div></article>').join(''):'<div class="empty">Todavía no hay alabanzas guardadas con estos filtros. Pulsa “Añadir alabanza” para comenzar tu repertorio.</div>';document.querySelectorAll('.song-card').forEach(el=>el.onclick=()=>openSong(el.dataset.id))}
+function showEditor(s){$('editor').classList.remove('hidden');$('reader').classList.add('hidden');$('editorTitle').textContent=s?'Editar alabanza':'Nueva alabanza';$('songId').value=s?.id||'';$('title').value=s?.title||'';$('songCategory').value=s?.category||'Himnos';$('key').value=s?.key||'C';$('bpm').value=s?.bpm||'';$('lyrics').value=s?.lyrics||'';document.querySelectorAll('.instCheck').forEach(c=>c.checked?s?.instruments?c.checked=s.instruments.includes(c.value):true:c.checked=false);$('editor').scrollIntoView({behavior:'smooth'})}
+function closeEditor(){$('editor').classList.add('hidden')}
+function normalizeChord(ch){let m=ch.match(/^([A-G](?:#|b)?)(.*)$/);if(!m)return ch;let root=FLAT[m[1]]||m[1],i=NOTES.indexOf(root);if(i<0)return ch;return NOTES[(i+shift%12+12)%12]+m[2]}
+function renderLyrics(text){return esc(text).split(/(\[[^\]]+\])/g).map(part=>part.startsWith('[')&&part.endsWith(']')?'<span class="chord">'+esc(normalizeChord(part.slice(1,-1)))+'</span>':part).join('')}
+function openSong(id){let s=songs.find(x=>x.id===id);if(!s)return;currentId=id;shift=0;large=false;$('reader').classList.remove('hidden');$('editor').classList.add('hidden');$('readCategory').textContent=s.category;$('readTitle').textContent=s.title;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);$('readLyrics').classList.toggle('large',large);$('reader').scrollIntoView({behavior:'smooth'})}
+function refreshReader(){let s=songs.find(x=>x.id===currentId);if(!s)return;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(shift?' · Transposición: '+(shift>0?'+':'')+shift+' semitono(s)':'')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);$('readLyrics').classList.toggle('large',large)}
+$('newSong').onclick=()=>showEditor(null);$('closeEditor').onclick=closeEditor;$('cancelEdit').onclick=closeEditor;
+$('songForm').onsubmit=e=>{e.preventDefault();let id=$('songId').value||String(Date.now()),old=songs.find(s=>s.id===id);let s={id,title:$('title').value.trim(),category:$('songCategory').value,key:$('key').value,bpm:$('bpm').value,instruments:[...document.querySelectorAll('.instCheck:checked')].map(c=>c.value),lyrics:$('lyrics').value};if(old)songs=songs.map(x=>x.id===id?s:x);else songs.push(s);save();renderList();closeEditor();openSong(id)};
+$('closeReader').onclick=()=>{$('reader').classList.add('hidden');currentId=null};$('transposeUp').onclick=()=>{shift=(shift+1)%12;refreshReader()};$('transposeDown').onclick=()=>{shift=(shift+11)%12;refreshReader()};$('fontToggle').onclick=()=>{large=!large;$('readLyrics').classList.toggle('large',large)};$('print').onclick=()=>window.print();
+$('editCurrent').onclick=()=>showEditor(songs.find(s=>s.id===currentId));$('deleteCurrent').onclick=()=>{let s=songs.find(s=>s.id===currentId);if(s&&confirm('¿Eliminar “'+s.title+'” de este navegador?')){songs=songs.filter(x=>x.id!==currentId);save();renderList();$('reader').classList.add('hidden');currentId=null}};
+$('search').oninput=renderList;$('category').onchange=renderList;$('instrument').onchange=renderList;
+$('exportData').onclick=()=>{let blob=new Blob([JSON.stringify(songs,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='respaldo-ibb-musica.json';a.click();URL.revokeObjectURL(url)};
+$('importData').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();if(confirm('La importación reemplazará las alabanzas guardadas en este navegador. ¿Continuar?')){songs=data;save();renderList();alert('Respaldo importado.')}}catch(err){alert('No se pudo leer el respaldo. Selecciona un archivo JSON exportado desde IBB Música.')}e.target.value=''};
+renderList();
+</script></body></html>
