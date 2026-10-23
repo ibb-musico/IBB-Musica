@@ -132,7 +132,18 @@ async function initRepertorio(){
       if(Array.isArray(inicial)&&inicial.length){
         const existentes=new Set(songs.map(s=>s.id));
         const nuevos=inicial.filter(s=>!existentes.has(s.id));
-        if(nuevos.length){songs=[...songs,...nuevos];save();}
+        if(nuevos.length)songs=[...songs,...nuevos];
+        // Actualización dirigida: corregir la canción revisada incluso si ya estaba guardada en este navegador.
+        const corregida=inicial.find(s=>s.id==='dropbox-lentas-que-dulce-es-estar-en-tu-presencia');
+        if(corregida){
+          const idx=songs.findIndex(s=>s.id===corregida.id);
+          if(idx>=0)songs[idx]={...songs[idx],lyrics:corregida.lyrics,key:corregida.key,title:corregida.title,category:corregida.category};
+          else {
+            const tituloIdx=songs.findIndex(s=>s.title.toLowerCase()==='qué dulce es estar en tu presencia'||s.title.toLowerCase()==='que dulce es estar en tu presencia');
+            if(tituloIdx>=0)songs[tituloIdx]={...songs[tituloIdx],lyrics:corregida.lyrics,key:corregida.key,title:corregida.title,category:corregida.category};
+          }
+        }
+        save();
       }
     }
   }catch(error){console.warn('No se pudo cargar el repertorio inicial',error)}
