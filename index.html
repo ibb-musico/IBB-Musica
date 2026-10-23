@@ -55,7 +55,7 @@
 <div class="actions"><button type="submit">Guardar alabanza</button><button type="button" class="secondary" id="cancelEdit">Cancelar</button></div>
 </form></section>
 <section id="reader" class="reader hidden">
-<div class="reader-top"><div><div id="readCategory" class="meta"></div><h2 id="readTitle"></h2><div id="readMeta" class="meta"></div></div><div class="actions no-print"><button class="secondary" id="transposeDown">− Tono</button><button class="secondary" id="transposeUp">＋ Tono</button><button class="secondary" id="fontToggle">Aumentar letra</button><button class="secondary" id="toggleChords">Ver solo letra</button><button class="secondary" id="print">Imprimir</button><button class="secondary" id="editCurrent">Editar</button><button class="danger" id="deleteCurrent">Eliminar</button><button id="closeReader">Volver</button></div></div>
+<div class="reader-top"><div><div id="readCategory" class="meta"></div><h2 id="readTitle"></h2><div id="readMeta" class="meta"></div></div><div class="actions no-print"><button class="secondary" id="transposeDown">− Tono</button><button class="secondary" id="transposeUp">＋ Tono</button><button class="secondary" id="fontToggle">Aumentar letra</button><button class="secondary" id="toggleChords">Ver solo letra</button><button class="secondary" id="imageToggle">Ver como imagen</button><button class="secondary" id="print">Imprimir</button><button class="secondary" id="editCurrent">Editar</button><button class="danger" id="deleteCurrent">Eliminar</button><button id="closeReader">Volver</button></div></div>
 <p class="note no-print">Los acordes se muestran en rojo sobre el punto de cambio. El cambio de tonalidad modifica los acordes guardados en formato [acorde].</p>
 <div id="readLyrics" class="song-text"></div><img id="readImage" class="song-image hidden" src="./imagenes/que-dulce-es-estar-en-tu-presencia.svg" alt="Canción completa Qué dulce es estar en tu presencia con acordes">
 </section>
@@ -102,11 +102,44 @@ function renderLyrics(text){
  }
  return html;
 }
-function openSong(id){let s=songs.find(x=>x.id===id);if(!s)return;currentId=id;shift=0;large=false;showChords=!['voz','bateria'].includes($('instrument').value);$('reader').classList.remove('hidden');$('editor').classList.add('hidden');$('readCategory').textContent=s.category;$('readTitle').textContent=s.title;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);const useImage=s.id==='dropbox-lentas-que-dulce-es-estar-en-tu-presencia';$('readImage').classList.toggle('hidden',!useImage);$('readLyrics').classList.toggle('hidden',useImage);$('readLyrics').classList.toggle('large',large);$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes';$('reader').scrollIntoView({behavior:'smooth'})}
-function refreshReader(){let s=songs.find(x=>x.id===currentId);if(!s)return;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(shift?' · Transposición: '+(shift>0?'+':'')+shift+' semitono(s)':'')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);const useImage=s.id==='dropbox-lentas-que-dulce-es-estar-en-tu-presencia';$('readImage').classList.toggle('hidden',!useImage);$('readLyrics').classList.toggle('hidden',useImage);$('readLyrics').classList.toggle('large',large);$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes'}
+function xmlEsc(value){return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
+function makeSongImage(song){
+ const source=String(song?.lyrics||'').replace(/\r/g,'').split('\n');
+ const rows=[];let maxChars=0;
+ source.forEach(line=>{
+  let lyric='',chords=[],parts=line.split(/(\[[^\]]+\])/g);
+  for(let i=0;i<parts.length;i++){
+   const part=parts[i];
+   if(part.startsWith('[')&&part.endsWith(']')){
+    const chord=normalizeChord(part.slice(1,-1));
+    const next=parts[i+1]||'';
+    const m=next.match(/^(\s*)(\S+)/);
+    if(m){const pos=lyric.length+m[1].length;chords.push({pos,text:chord});}
+   }else lyric+=part;
+  }
+  maxChars=Math.max(maxChars,lyric.length,...chords.map(c=>c.pos+c.text.length));
+  rows.push({lyric,chords});
+ });
+ const width=Math.max(1000,Math.min(2400,maxChars*21+100)),left=48,top=140,lineHeight=66,height=top+Math.max(1,rows.length)*lineHeight+45;
+ let body='';
+ rows.forEach((row,i)=>{
+  const y=top+i*lineHeight;
+  row.chords.forEach(c=>{body+= '<text x="'+(left+c.pos*21)+'" y="'+(y-22)+'" fill="#c62828" font-family="monospace" font-size="22" font-weight="700">'+xmlEsc(c.text)+'</text>';});
+  body+='<text x="'+left+'" y="'+y+'" fill="#191919" font-family="monospace" font-size="25">'+xmlEsc(row.lyric||' ')+'</text>';
+ });
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><rect width="100%" height="100%" fill="#ffffff"/><text x="'+left+'" y="54" fill="#191919" font-family="Arial,sans-serif" font-size="34" font-weight="700">'+xmlEsc(song?.title||'Alabanza')+'</text><text x="'+left+'" y="91" fill="#666666" font-family="Arial,sans-serif" font-size="18">'+xmlEsc(song?.category||'IBB Música')+'</text>'+body+'</svg>';
+ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function setImageView(show){
+ const s=songs.find(x=>x.id===currentId);if(!s)return;
+ if(show){$('readImage').src=makeSongImage(s);$('readImage').alt='Imagen completa de '+s.title+' con letra y acordes';$('readImage').classList.remove('hidden');$('readLyrics').classList.add('hidden');$('imageToggle').textContent='Volver a letra';}
+ else{$('readImage').classList.add('hidden');$('readLyrics').classList.remove('hidden');$('imageToggle').textContent='Ver como imagen';}
+}
+function openSong(id){let s=songs.find(x=>x.id===id);if(!s)return;currentId=id;shift=0;large=false;showChords=!['voz','bateria'].includes($('instrument').value);$('reader').classList.remove('hidden');$('editor').classList.add('hidden');$('readCategory').textContent=s.category;$('readTitle').textContent=s.title;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);$('readImage').classList.add('hidden');$('readLyrics').classList.remove('hidden');$('imageToggle').textContent='Ver como imagen';$('readLyrics').classList.toggle('large',large);$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes';$('reader').scrollIntoView({behavior:'smooth'})}
+function refreshReader(){let s=songs.find(x=>x.id===currentId);if(!s)return;$('readMeta').textContent='Tonalidad original: '+(s.key||'C')+(shift?' · Transposición: '+(shift>0?'+':'')+shift+' semitono(s)':'')+(s.bpm?' · '+s.bpm+' BPM':'');$('readLyrics').innerHTML=renderLyrics(s.lyrics);$('readImage').classList.add('hidden');$('readLyrics').classList.remove('hidden');$('imageToggle').textContent='Ver como imagen';$('readLyrics').classList.toggle('large',large);$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes'}
 $('newSong').onclick=()=>{if(!isAdmin){authMsg('Inicia sesión con una cuenta administradora para añadir alabanzas.');return}showEditor(null)};$('closeEditor').onclick=closeEditor;$('cancelEdit').onclick=closeEditor;
 $('songForm').onsubmit=async e=>{e.preventDefault();if(!isAdmin){authMsg('Solo administración puede guardar cambios compartidos.');return}let id=$('songId').value||String(Date.now()),old=songs.find(x=>x.id===id);let song={id,dbId:old?.dbId,title:$('title').value.trim(),category:$('songCategory').value,key:$('key').value,bpm:$('bpm').value,instruments:[...document.querySelectorAll('.instCheck:checked')].map(c=>c.value),lyrics:$('lyrics').value};if(old)songs=songs.map(x=>x.id===id?song:x);else songs.push(song);save();renderList();closeEditor();openSong(id);await syncSongToCloud(song);renderList();if(currentId===id)openSong(song.id)};
-$('closeReader').onclick=()=>{$('reader').classList.add('hidden');currentId=null};$('transposeUp').onclick=()=>{shift=(shift+1)%12;refreshReader()};$('transposeDown').onclick=()=>{shift=(shift+11)%12;refreshReader()};$('fontToggle').onclick=()=>{large=!large;$('readLyrics').classList.toggle('large',large)};$('toggleChords').onclick=()=>{showChords=!showChords;$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes'};$('print').onclick=()=>window.print();
+$('closeReader').onclick=()=>{$('reader').classList.add('hidden');currentId=null};$('transposeUp').onclick=()=>{shift=(shift+1)%12;refreshReader()};$('transposeDown').onclick=()=>{shift=(shift+11)%12;refreshReader()};$('fontToggle').onclick=()=>{large=!large;$('readLyrics').classList.toggle('large',large)};$('toggleChords').onclick=()=>{showChords=!showChords;$('readLyrics').classList.toggle('lyrics-only',!showChords);$('toggleChords').textContent=showChords?'Ver solo letra':'Mostrar acordes'};$('imageToggle').onclick=()=>setImageView($('readImage').classList.contains('hidden'));$('print').onclick=()=>window.print();
 $('editCurrent').onclick=()=>showEditor(songs.find(s=>s.id===currentId));$('deleteCurrent').onclick=async()=>{let song=songs.find(x=>x.id===currentId);if(!isAdmin){authMsg('Solo administración puede eliminar alabanzas.');return}if(song&&confirm('¿Eliminar “'+song.title+'” del repertorio compartido?')){if(song.dbId&&sb){const {error}=await sb.from('alabanzas').delete().eq('id',song.dbId);if(error){authMsg('No se pudo eliminar del repertorio compartido: '+error.message);return}}songs=songs.filter(x=>x.id!==currentId);save();renderList();$('reader').classList.add('hidden');currentId=null;authMsg('Alabanza eliminada del repertorio compartido.')}};
 $('search').oninput=renderList;$('category').onchange=renderList;$('instrument').onchange=()=>{renderList();if(currentId){showChords=!['voz','bateria'].includes($('instrument').value);refreshReader()}};
 $('exportData').onclick=()=>{let blob=new Blob([JSON.stringify(songs,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='respaldo-ibb-musica.json';a.click();URL.revokeObjectURL(url)};
