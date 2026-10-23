@@ -225,7 +225,7 @@ $('syncDropboxBtn').onclick=async()=>{
     const response=await fetch(SUPABASE_URL+'/functions/v1/dropbox-sync',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+sessionData.session.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({})});
     const result=await response.json();
     if(!response.ok)throw new Error(result.error||'La sincronización no pudo completarse.');
-    $('dropboxSyncStatus').textContent='Sincronización terminada. Documentos: '+result.documentsFound+'. Nuevas alabanzas: '+result.added+'. Duplicadas omitidas: '+result.skipped+'. Errores: '+result.failed+'. Revisa los acordes importados antes del culto.';
+    $('dropboxSyncStatus').textContent='Sincronización terminada. Documentos: '+result.documentsFound+'. Nuevas alabanzas: '+result.added+'. Alabanzas corregidas desde Dropbox: '+(result.updated||0)+'. Duplicadas omitidas: '+result.skipped+'. Errores: '+result.failed+'. Revisa los acordes importados antes del culto.';
     await syncCloudSongs();
   }catch(err){$('dropboxSyncStatus').textContent='Dropbox: '+(err.message||'No se pudo sincronizar. Revisa la configuración de Dropbox en Supabase.')}
   finally{btn.disabled=false}
