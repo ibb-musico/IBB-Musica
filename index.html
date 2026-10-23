@@ -17,6 +17,26 @@
 <div><label for="instrument">Vista de instrumento</label><select id="instrument"><option value="todos">Todos</option><option value="voz">Voz</option><option value="piano">Piano / teclado</option><option value="guitarra">Guitarra</option><option value="bajo">Bajo</option><option value="bateria">Batería</option></select></div>
 <div><button id="newSong">＋ Añadir alabanza</button></div>
 </section>
+<section id="teamPanel" class="panel hidden" style="margin-bottom:16px">
+<div class="topline"><div><h2 style="margin:0">Cultos y repertorios del equipo</h2><p class="note" style="margin:4px 0 0">Programa las alabanzas del culto y comparte avisos con los músicos.</p></div><span class="pill">Compartido</span></div>
+<form id="setlistForm" class="no-print" style="margin-top:12px">
+<h3>Crear repertorio de culto</h3>
+<div class="toolbar" style="padding:0;border:0">
+<div><label for="setlistName">Nombre del repertorio *</label><input id="setlistName" required placeholder="Ej. Culto domingo mañana"></div>
+<div><label for="setlistDate">Fecha</label><input id="setlistDate" type="date"></div>
+<div><label for="setlistType">Tipo de reunión</label><select id="setlistType"><option>Culto dominical</option><option>Reunión de oración</option><option>Jóvenes</option><option>Santa Cena</option><option>Especial</option><option>Ensayo</option></select></div>
+</div>
+<label for="setlistSongs">Selecciona las alabanzas en el orden que se tocarán (usa Ctrl o selección múltiple)</label>
+<select id="setlistSongs" multiple size="7" style="width:100%;min-height:130px"></select>
+<label for="setlistMessage" style="margin-top:10px">Aviso para el equipo (opcional)</label><textarea id="setlistMessage" rows="2" placeholder="Ej. Llegar 30 minutos antes; revisar tonos y entradas."></textarea>
+<div class="actions"><button type="submit" id="createSetlistBtn">Guardar y avisar al equipo</button></div>
+</form>
+<p id="setlistStatus" class="note" role="status"></p>
+<div id="setlistList"></div>
+<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+<div class="topline"><h3 style="margin:0">Notificaciones</h3><button type="button" class="secondary no-print" id="refreshNotifications">Actualizar</button></div>
+<div id="notificationList" class="song-list"></div>
+</section>
 <section id="editor" class="panel hidden no-print">
 <div class="topline"><h2 id="editorTitle">Nueva alabanza</h2><button class="secondary" id="closeEditor">Cerrar</button></div>
 <form id="songForm">
@@ -75,9 +95,9 @@ $('importData').onclick=()=>$('importFile').click();$('importFile').onchange=asy
 function normalTitle(t){return String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function authMsg(t){$('authStatus').textContent=t}
 function setAuthMode(mode){authMode=mode;$('nameField').classList.toggle('hidden',mode!=='signup');$('loginBtn').textContent=mode==='signup'?'Crear cuenta':'Ingresar';$('signupBtn').textContent=mode==='signup'?'Volver a ingresar':'Crear cuenta de músico';$('authPassword').autocomplete=mode==='signup'?'new-password':'current-password'}
-function updatePermissions(){$('authRole').textContent=cloudUser?(isAdmin?'Administrador':'Músico · lectura'):'Modo de lectura';$('loginBtn').classList.toggle('hidden',!!cloudUser);$('signupBtn').classList.toggle('hidden',!!cloudUser);$('logoutBtn').classList.toggle('hidden',!cloudUser);$('authEmail').disabled=!!cloudUser;$('authPassword').disabled=!!cloudUser;$('authName').disabled=!!cloudUser;$('newSong').classList.toggle('hidden',!isAdmin);$('editCurrent').classList.toggle('hidden',!isAdmin);$('deleteCurrent').classList.toggle('hidden',!isAdmin)}
+function updatePermissions(){$('teamPanel')?.classList.toggle('hidden',!cloudUser);$('setlistForm')?.classList.toggle('hidden',!isAdmin);$('authRole').textContent=cloudUser?(isAdmin?'Administrador':'Músico · lectura'):'Modo de lectura';$('loginBtn').classList.toggle('hidden',!!cloudUser);$('signupBtn').classList.toggle('hidden',!!cloudUser);$('logoutBtn').classList.toggle('hidden',!cloudUser);$('authEmail').disabled=!!cloudUser;$('authPassword').disabled=!!cloudUser;$('authName').disabled=!!cloudUser;$('newSong').classList.toggle('hidden',!isAdmin);$('editCurrent').classList.toggle('hidden',!isAdmin);$('deleteCurrent').classList.toggle('hidden',!isAdmin)}
 async function refreshProfile(){isAdmin=false;if(cloudUser&&sb){const {data,error}=await sb.from('integrantes').select('rol,nombre,activo').eq('id',cloudUser.id).maybeSingle();if(!error&&data&&data.activo&&data.rol==='administrador')isAdmin=true}updatePermissions()}
-async function syncCloudSongs(){if(!sb||!cloudUser)return;authMsg('Conectado. Sincronizando repertorio…');const {data,error}=await sb.from('alabanzas').select('*').order('titulo');if(error){authMsg('Sesión iniciada, pero no pude leer el repertorio compartido: '+error.message);return}const local=[...songs],localByTitle=new Map(local.map(x=>[normalTitle(x.title),x])),cloudTitles=new Set();const cloud=(data||[]).map(row=>{const title=row.titulo||'Sin título',norm=normalTitle(title);cloudTitles.add(norm);const localSong=localByTitle.get(norm);const lyrics=(localSong&&localSong.lyrics)||row.letra_acordes||row.letra||'';return {id:'db-'+row.id,dbId:row.id,title,category:row.categoria||localSong?.category||'Lentas',key:row.tono_original||localSong?.key||'C',bpm:localSong?.bpm||'',instruments:localSong?.instruments||['voz','piano','guitarra','bajo','bateria'],lyrics,source:'Supabase'}});const extras=local.filter(x=>!cloudTitles.has(normalTitle(x.title))&&!x.dbId);songs=[...cloud,...extras];save();renderList();authMsg('Sincronizado: '+cloud.length+' canciones compartidas. '+(isAdmin?'Puedes administrar el repertorio.':'Tu cuenta tiene acceso de lectura.'))}
+async function syncCloudSongs(){if(!sb||!cloudUser)return;authMsg('Conectado. Sincronizando repertorio…');const {data,error}=await sb.from('alabanzas').select('*').order('titulo');if(error){authMsg('Sesión iniciada, pero no pude leer el repertorio compartido: '+error.message);return}const local=[...songs],localByTitle=new Map(local.map(x=>[normalTitle(x.title),x])),cloudTitles=new Set();const cloud=(data||[]).map(row=>{const title=row.titulo||'Sin título',norm=normalTitle(title);cloudTitles.add(norm);const localSong=localByTitle.get(norm);const lyrics=(localSong&&localSong.lyrics)||row.letra_acordes||row.letra||'';return {id:'db-'+row.id,dbId:row.id,title,category:row.categoria||localSong?.category||'Lentas',key:row.tono_original||localSong?.key||'C',bpm:localSong?.bpm||'',instruments:localSong?.instruments||['voz','piano','guitarra','bajo','bateria'],lyrics,source:'Supabase'}});const extras=local.filter(x=>!cloudTitles.has(normalTitle(x.title))&&!x.dbId);songs=[...cloud,...extras];save();renderList();authMsg('Sincronizado: '+cloud.length+' canciones compartidas. '+(isAdmin?'Puedes administrar el repertorio.':'Tu cuenta tiene acceso de lectura.'));await loadTeamPanel()}
 async function syncSongToCloud(song){if(!sb||!cloudUser||!isAdmin)return;const payload={titulo:song.title,letra:song.lyrics,letra_acordes:song.lyrics,tono_original:song.key||null,categoria:song.category||'Lentas',fuente_archivo:song.sourcePath||null};const result=song.dbId?await sb.from('alabanzas').update(payload).eq('id',song.dbId).select().single():await sb.from('alabanzas').insert(payload).select().single();if(result.error){authMsg('El cambio quedó en este dispositivo, pero no se sincronizó: '+result.error.message);return}song.dbId=result.data.id;song.id='db-'+result.data.id;song.source='Supabase';save();authMsg('Guardado y sincronizado con el equipo.')}
 async function initAuth(){if(!sb){authMsg('No se pudo cargar el servicio de sincronización. Revisa la conexión a internet.');return}const {data}=await sb.auth.getSession();cloudUser=data.session?.user||null;if(cloudUser){await refreshProfile();await syncCloudSongs()}else updatePermissions();sb.auth.onAuthStateChange(async(_event,session)=>{cloudUser=session?.user||null;await refreshProfile();if(cloudUser)await syncCloudSongs();else{authMsg('Sesión cerrada. El repertorio de lectura sigue disponible.');await initRepertorio()}});cloudChannel=sb.channel('ibb-musica-repertorio').on('postgres_changes',{event:'*',schema:'public',table:'alabanzas'},()=>{if(cloudUser)syncCloudSongs()}).subscribe()}
 $('signupBtn').onclick=()=>{setAuthMode(authMode==='signup'?'login':'signup');authMsg(authMode==='signup'?'Ingresa con tu cuenta.':'Completa nombre, correo y contraseña para crear tu cuenta.')};
@@ -98,6 +118,51 @@ async function initRepertorio(){
   }catch(error){console.warn('No se pudo cargar el repertorio inicial',error)}
   renderList();
 }
+
+async function loadTeamPanel(){
+  if(!sb||!cloudUser)return;
+  $('teamPanel').classList.remove('hidden');
+  $('setlistForm').classList.toggle('hidden',!isAdmin);
+  const cloudSongs=songs.filter(s=>s.dbId);
+  $('setlistSongs').innerHTML=cloudSongs.map(s=>'<option value="'+esc(s.dbId)+'">'+esc(s.title)+' · '+esc(s.key||'C')+'</option>').join('');
+  const {data:sets,error}=await sb.from('repertorios').select('id,nombre,fecha,tipo_culto,creado_en').order('fecha',{ascending:false,nullsFirst:false}).limit(30);
+  if(error){$('setlistStatus').textContent='No se pudieron cargar los repertorios: '+error.message}else{
+    $('setlistStatus').textContent=(sets||[]).length?'Repertorios compartidos del equipo.':'Todavía no hay repertorios de culto creados.';
+    let cards=[];
+    for(const set of (sets||[])){
+      const {data:items}=await sb.from('repertorio_alabanzas').select('orden,tono_elegido,notas_admin,alabanzas(titulo)').eq('repertorio_id',set.id).order('orden');
+      cards.push('<article class="song-card"><h3>'+esc(set.nombre)+'</h3><div class="meta">'+esc(set.tipo_culto||'Reunión')+(set.fecha?' · '+esc(set.fecha):'')+'</div><ol>'+((items||[]).map(i=>'<li>'+esc(i.alabanzas?.titulo||'Alabanza')+(i.tono_elegido?' · Tono '+esc(i.tono_elegido):'')+'</li>').join('')||'<li>Sin alabanzas añadidas</li>')+'</ol></article>');
+    }
+    $('setlistList').innerHTML=cards.join('');
+  }
+  const {data:notifs,error:nerr}=await sb.from('notificaciones').select('id,titulo,mensaje,tipo,creado_en,leida_en').order('creado_en',{ascending:false}).limit(20);
+  if(nerr){$('notificationList').innerHTML='<p class="note">No se pudieron cargar las notificaciones.</p>';return}
+  $('notificationList').innerHTML=(notifs||[]).length?(notifs||[]).map(n=>'<article class="song-card"><h3>'+esc(n.titulo)+(n.leida_en?'':' <span class="pill">Nueva</span>')+'</h3><p>'+esc(n.mensaje)+'</p><div class="meta">'+esc(new Date(n.creado_en).toLocaleString('es-CL'))+'</div>'+(n.leida_en?'':'<div class="actions no-print"><button type="button" class="secondary" data-read-notif="'+n.id+'">Marcar como leída</button></div>')+'</article>').join(''):'<p class="note">No tienes notificaciones por ahora.</p>';
+  document.querySelectorAll('[data-read-notif]').forEach(btn=>btn.onclick=async()=>{const {error}=await sb.from('notificaciones').update({leida_en:new Date().toISOString()}).eq('id',btn.dataset.readNotif);if(error)authMsg('No se pudo marcar como leída: '+error.message);else await loadTeamPanel()});
+}
+$('refreshNotifications').onclick=loadTeamPanel;
+$('setlistForm').onsubmit=async e=>{
+  e.preventDefault();if(!cloudUser||!isAdmin){$('setlistStatus').textContent='Solo administración puede crear repertorios.';return}
+  const name=$('setlistName').value.trim();if(!name)return;
+  const selected=[...$('setlistSongs').selectedOptions].map(o=>Number(o.value)).filter(Number.isFinite);
+  $('createSetlistBtn').disabled=true;
+  try{
+    const {data:set,error}=await sb.from('repertorios').insert({nombre:name,fecha:$('setlistDate').value||null,tipo_culto:$('setlistType').value}).select().single();
+    if(error)throw error;
+    if(selected.length){
+      const rows=selected.map((id,i)=>({repertorio_id:set.id,alabanza_id:id,orden:i+1,tono_elegido:songs.find(s=>Number(s.dbId)===id)?.key||null,semitonos:0}));
+      const result=await sb.from('repertorio_alabanzas').insert(rows);if(result.error)throw result.error;
+    }
+    const message=$('setlistMessage').value.trim()||('Se publicó el repertorio «'+name+'». Revisa las alabanzas y sus tonalidades en IBB Música.');
+    const {data:members,error:membersError}=await sb.from('integrantes').select('id').eq('activo',true);
+    if(!membersError&&members?.length){const notify=await sb.from('notificaciones').insert(members.map(m=>({destinatario_id:m.id,titulo:'Nuevo repertorio: '+name,mensaje:message,tipo:'repertorio',repertorio_id:set.id})));if(notify.error)authMsg('Repertorio guardado, pero el aviso no pudo enviarse: '+notify.error.message)}
+    $('setlistName').value='';$('setlistDate').value='';$('setlistMessage').value='';$('setlistSongs').selectedIndex=-1;
+    $('setlistStatus').textContent='Repertorio guardado y aviso enviado al equipo.';
+    await loadTeamPanel();
+  }catch(err){$('setlistStatus').textContent='No se pudo guardar el repertorio: '+(err.message||'error desconocido')}
+  finally{$('createSetlistBtn').disabled=false}
+};
+
 initRepertorio();
 initAuth();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&cloudUser)syncCloudSongs()});
